@@ -1,8 +1,8 @@
-動作確認URL
+動作確認URL)
+https://e3sh.github.io/BBD/relese/BLOCKDROPdnc.html
 
 
 提出分)
-
 
 おまえら土日までに一本ゲーム作るスレ16　スレ立て日:2023/09/25(月) 17:22:28.25
 https://mevius.5ch.net/test/read.cgi/gamedev/1695630148/
