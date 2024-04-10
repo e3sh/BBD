@@ -1,8 +1,20 @@
-動作確認URL)
+
+THEMA BLOCK,BALLANCE/DONICHI THREADE 16th 
+
+*BLOCKDROP*
+--------
+
+*Repository版 動作確認URL:*
+https://e3sh.github.io/BBD/BLOCKDROPdnc.html
+
+
+
+*Release版 動作確認URL:*
 https://e3sh.github.io/BBD/release/BLOCKDROPdnc.html
 
+(2024/04/10提出分) 
 
-提出分)
+#### 提出先情報
 
 おまえら土日までに一本ゲーム作るスレ16　スレ立て日:2023/09/25(月) 17:22:28.25
 https://mevius.5ch.net/test/read.cgi/gamedev/1695630148/
