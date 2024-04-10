@@ -96,7 +96,7 @@ class GameTask_Test extends GameTask {
 
 	_i = 0;
 	_x = 0;	_y = 0;
-	_sk = ""; _sm = ""; _sc = ""; //KEYBOARD TEXT,MOUSE TEXT, COLISION TEXT
+	_sk = ""; _sm = {}; _sc = ""; //KEYBOARD TEXT,MOUSE TEXT, COLISION TEXT
 	_tc = 0; _dt = ""; _dc = 1;   //DELAYTIME ,DELTATIME TEXT/ DESTROYBLOCKCOUNT
 	_dtt = 0;//DELAYTRIGGER
 	_sp = []; //SPRITETABLE
@@ -157,6 +157,8 @@ class GameTask_Test extends GameTask {
 		
 		this._sp = new Array(0);
 		this._initGame(g);
+
+		this._sm = {x:0, y:0, old_x:0, old_y:0};
 	}
 
 	_resetblock(sw){
@@ -226,21 +228,58 @@ class GameTask_Test extends GameTask {
             }
         }
 
-        g.vgamepad.check(g.mouse, g.touchpad);
+		let akey = false; if (Boolean(w[65])) {if (w[65]) akey = true;}
+		let dkey = false; if (Boolean(w[68])) {if (w[68]) dkey = true;}
+
+		let r = g.gamepad.check();
+
+		let lb = g.gamepad.btn_lb;
+		let rb = g.gamepad.btn_rb;
+		let abtn = g.gamepad.btn_a;
+		let xbtn = g.gamepad.btn_x;
+		let axes = g.gamepad.axes;
+
+		/*
+		this._sk += (r)?
+		"gpad Rdy" + ((lb)?"L":"") + ((rb)?"R":"") + ((xbtn)?"X":"") + ((abtn)?"A":"") + "x:" + Math.trunc(axes[0]*100) + "y:" + Math.trunc(axes[1]*100)
+		:"gpad not";
+		*/
+
+        //g.vgamepad.check(g.mouse, g.touchpad);
 
 	    let mstate = g.mouse.check();
 
-	    this._sm = "x" + mstate.x + " y" + mstate.y + " b" + mstate.button + " w" + mstate.wheel;
+		if ((mstate.x != this._sm.old_x)||(mstate.x != this._sm.old_x)){
+			this._x = mstate.x;
+			this._y = mstate.y;
+			this._sm.old_x = mstate.x;
+			this._sm.old_y = mstate.y;
+		}else{
 
-	    this._x = mstate.x;
-	    this._y = mstate.y;
+			if (r){
+				let vx = Math.trunc(axes[0]*30);
+				let vy = Math.trunc(axes[1]*30);
+
+				vx = (Math.abs(vx) > 3)? vx:0; vy = (Math.abs(vy) > 3)?vy:0; //StickのDrift対応　閾値10％
+
+				this._x = this._x + vx;
+				this._y = this._y + vy;
+				this._sk +=	"axesmv"	
+			}
+			this._sk +=	"2"	
+		}
+	    //this._sm = "x" + mstate.x + " y" + mstate.y + " b" + mstate.button + " w" + mstate.wheel;
 		
 		if (this._x < 32)		this._x = 32;
 		if (this._x > 1024-32)	this._x = 1024-32;
 		if (this._y < 32)		this._y	= 32;
 		if (this._y >768-32)	this._y = 768-32;
 
-	    if (mstate.button == 0) {
+		let leftbutton = (akey || lb);
+		let rightbutton = (dkey || rb);
+		let trigger = (abtn || xbtn || (mstate.button == 0));
+
+	    if (trigger) {
 			if (this._dtt < g.time()) {
 				this._dtt = g.time()+250;
 
@@ -280,6 +319,16 @@ class GameTask_Test extends GameTask {
 			if (Math.abs(this._wh) >4) {
 				this._wh = Math.sign(mstate.wheel) * 4;
 			}
+		}
+
+		if (leftbutton){
+			this._wh = 0;
+			this._i-=4; 
+		
+		}
+		if (rightbutton){
+			this.wh = 0;
+			this._i+=4;
 		}
 
 		if (this._tc < g.time()) {
@@ -504,6 +553,7 @@ class GameTask_Test extends GameTask {
 		g.font["8x8white"].putchr("DeltaT:" + g.deltaTime().toString().substring(0, 5), 1024 - 100, 0);
 		g.font["8x8green"].putchr("Col:" + this._sc.length*2 + "/s", 1024 - 100, 8);
 		g.font["8x8red"].putchr("Sprite:" + this._sp.length, 1024 - 100, 16);
+		//g.font["8x8white"].putchr("INPUT:" + this._sk, 0, 16);
 
 		if ((this._ene.now != this._ene.before)&&(this._ene.now >0)){
 			let w = {x:this._x, y:this._y, c:((this._ene.now/this._ene.max)<0.2)?"red":"yellow"
@@ -533,6 +583,7 @@ class GameTask_Test extends GameTask {
 			g.font["std"].putchr("THEME BLOCK/BALLANCE(DONICHI THREAD16)", 1024/2-200, 768/2-116);
 			g.screen[0].putImage(g.asset.image["title"].img,1024/2-250,768/2-100);
 			g.font["std"].putchr("START MOUSE BUTTON", 1024/2-200, 768/2+50, 2.0);
+			g.font["std"].putchr("or GamePad Button X/A", 1024/2-100, 768/2+70);
 		}
 	}
 }
