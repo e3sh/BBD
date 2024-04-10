@@ -1,5 +1,5 @@
 動作確認URL)
-https://e3sh.github.io/BBD/relese/BLOCKDROPdnc.html
+https://e3sh.github.io/BBD/release/BLOCKDROPdnc.html
 
 
 提出分)
