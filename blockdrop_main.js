@@ -4,23 +4,15 @@ function main() {
 
     let sysParam = {
 		canvasId: "layer0",
-        screen: [
-        { resolution: { w: 1024, h: 768 , x:0, y:0 } }
+        screen: [ 
+			{ resolution: { w: 1024, h: 768 , x:0, y:0 } }
         ]
 	}
 
 	let game = new GameCore( sysParam );
 
     //Game Asset Setup
-    // assetSetup( game )?
-
-	//game.asset.imageLoad( "title","TitleLogo.png" );
-	//game.asset.imageLoad( "SPGraph","pict/cha.png" );
-
 	pictdata(game);
-
-	//Game Device Setup
-    // deviceSetUp( game )?
 
 	let spfd = SpriteFontData();
 	for (let i in spfd) {
@@ -28,7 +20,7 @@ function main() {
 	}
     
     //Game Task Setup
-	game.task.add(new GameTask_Test("test"));
+	game.task.add(new GameTask_Main("main"));
 
 	//
 	game.screen[0].setBackgroundcolor("Navy"); 
@@ -37,9 +29,8 @@ function main() {
 	game.run();
 }
 
-// SpriteFontData
-//
 //----------------------------------------------------------------------
+// SpriteFontData
 function SpriteFontData() {
 
 	let sp_ch_ptn = [];
@@ -90,9 +81,9 @@ function SpriteFontData() {
     ]
 }
 
-// GameTaskTemplate//----------------------------------------------------------------------
-//
-class GameTask_Test extends GameTask {
+// ----------------------------------------------------------------------
+// GameTask
+class GameTask_Main extends GameTask {
 
 	_i = 0;
 	_x = 0;	_y = 0;
@@ -104,14 +95,26 @@ class GameTask_Test extends GameTask {
 	_ene; //Power
 	_result; //GameResult SCORE/ TIME etc 
 	_titlef;
-
+	titlewait;
+	
 	_wh = 0;//wheel
+
+	scene;
 	
 	constructor(id){
 		super(id);
 	}
 //----------------------------------------------------------------------
 	pre(g){// 最初の実行時に実行。
+		this.scene = [];
+
+		this.scene[	"Game"	] = new SceneGame();
+		this.scene[	"UI"	] = new SceneGameUI();
+		this.scene[	"Debug"	] = new SceneDebug();
+		this.scene[	"Result"] = new SceneResult();
+		this.scene["GameOver"] = new SceneGameOver();
+		this.scene[	"Title"	] = new SceneTitle();
+		
  	    //g.font["8x8white"].useScreen(1);
 
 	    g.sprite.setPattern("Player", {
@@ -154,10 +157,9 @@ class GameTask_Test extends GameTask {
 	        }
         )
 	    g.sprite.set(0, "Player", true, 32, 32);
-		
-		this._sp = new Array(0);
-		this._initGame(g);
 
+		this.scene["Game"].init(g);
+		this._initGame(g);
 		this._sm = {x:0, y:0, old_x:0, old_y:0};
 	}
 
@@ -181,43 +183,15 @@ class GameTask_Test extends GameTask {
 	}
 	
 	_initGame(g){
-	    g.sprite.set(0, "Player", true, 32, 32);
-		g.sprite.pos(0, 0, 0, 0, 1);
-		//g.sprite.reset(0);
-		this._block = this._resetblock({on:true, break:false, hit:false});
-		//this._block.break = this._resetblock(false);
-		for ( let i in this._block[24]){
-			this._block[24][i].break = true;
-		}
-		//this._block.break[24].fill(new Array(true);
-		//this._block.hit= this._resetblock(false);
-		for (let i in this._sp){
-			this._sp[i].visible = false;
-		}
-
-		this._i = 0;
-		this._wh = 5;
-		this._ene = {now:1000,max:1000,before: this.now};
-		this._result = {score:0, time:g.time(), stage:1, clrf:false, govf:false};
-
+		this.scene["Game"].reset(g);
 		this._titlef = true;
+		this.titlewait = g.time()+1000;
+
 	}
 //----------------------------------------------------------------------
 	step(g){// this.enable が true時にループ毎に実行される。
-		const ROW = 32;
-		const COL = 25;
-
-		//i++;
-		this._i+= this._wh; //= i;
-		//this._i+=3; //= i;
 
 	    let w = g.keyboard.check();
-
-	    this._sk = "";
-
-	    for (let li in w) {
-	        this._sk += "[" + li + "]" + ((w[li]) ? "*" : ".");
-	    }
 
         if (Boolean(w[70])) {//[f]key Fullscreen
             if (w[70]){
@@ -239,14 +213,6 @@ class GameTask_Test extends GameTask {
 		let xbtn = g.gamepad.btn_x;
 		let axes = g.gamepad.axes;
 
-		/*
-		this._sk += (r)?
-		"gpad Rdy" + ((lb)?"L":"") + ((rb)?"R":"") + ((xbtn)?"X":"") + ((abtn)?"A":"") + "x:" + Math.trunc(axes[0]*100) + "y:" + Math.trunc(axes[1]*100)
-		:"gpad not";
-		*/
-
-        //g.vgamepad.check(g.mouse, g.touchpad);
-
 	    let mstate = g.mouse.check();
 
 		if ((mstate.x != this._sm.old_x)||(mstate.x != this._sm.old_x)){
@@ -255,7 +221,6 @@ class GameTask_Test extends GameTask {
 			this._sm.old_x = mstate.x;
 			this._sm.old_y = mstate.y;
 		}else{
-
 			if (r){
 				let vx = Math.trunc(axes[0]*30);
 				let vy = Math.trunc(axes[1]*30);
@@ -264,133 +229,236 @@ class GameTask_Test extends GameTask {
 
 				this._x = this._x + vx;
 				this._y = this._y + vy;
-				this._sk +=	"axesmv"	
 			}
-			this._sk +=	"2"	
 		}
-	    //this._sm = "x" + mstate.x + " y" + mstate.y + " b" + mstate.button + " w" + mstate.wheel;
+
+		let whl = false; 
+		let whr = false; 
+		if (mstate.wheel != 0) {
+			whl = (Math.sign(mstate.wheel)<0)?true:false;
+			whr = (Math.sign(mstate.wheel)>0)?true:false;
+		}
 		
 		if (this._x < 32)		this._x = 32;
 		if (this._x > 1024-32)	this._x = 1024-32;
 		if (this._y < 32)		this._y	= 32;
 		if (this._y >768-32)	this._y = 768-32;
 
-		let leftbutton = (akey || lb);
-		let rightbutton = (dkey || rb);
+		let leftbutton = (akey || lb || whl);
+		let rightbutton = (dkey || rb || whr);
 		let trigger = (abtn || xbtn || (mstate.button == 0));
 
-	    if (trigger) {
-			if (this._dtt < g.time()) {
-				this._dtt = g.time()+250;
+		let input = {x: this._x, y:this._y, trigger: trigger, left: leftbutton, right: rightbutton}
 
-				if (this._titlef){
-					this._titlef = false;
-				}; 
-				if (this._result.govf){
-					this._initGame(g);
-				}; 
+		let param = this.scene["Game"].state();
+		this._result = param.result;
 
-				if (!this._titlef && !this._result.govf){ 
-					let n = g.sprite.get();//空値の場合は未使用スプライトの番号を返す。
-					g.sprite.set(n, "Enemy", true, 32, 32);
+		if (this._titlef){
+			if (this.scene["Title"].step(g, input, {delay: this.titlewait} )){
+				this._titlef = false; 
+			}
+		}else if (param.gameover){
+			if (this.scene["GameOver"].step(g, input, param)){
+				this._initGame(g);
+			};
+		} else 	this.scene["Game"].step(g, input);
+ 
 
-					//let hr = this._wh*8;
-					let px = this._x + Math.cos((Math.PI/180)*this._i)*48
-					let py = this._y + Math.sin((Math.PI/180)*this._i)*48 
+		this.scene["UI"].step(g, input, param);
+		this.scene["Debug"].step(g, input, param);
+	}
+//----------------------------------------------------------------------
+	draw(g){// this.visible が true時にループ毎に実行される。
 
-					this._wh = 0;//+= Math.sign(this._wh) * -1;
+		this.scene["Game"].draw(g);
+		this.scene["UI"].draw(g);
+		this.scene["Debug"].draw(g);
+	
+		if (this._result.clrf) this.scene["Result"].draw(g);
+		if (this._result.govf) this.scene["GameOver"].draw(g);
+		if (this._titlef) this.scene["Title"].draw(g);
+	}
+}
+//----------------------------------------------------------------------
+//Scene
+//----------------------------------------------------------------------
+// GameMain
+function SceneGame(){
 
-					g.sprite.pos(n, px, py, 0, 0.6 );
-					g.sprite.setMove(n, (this._i+90)% 360, 8, 3000);// number, r, speed, lifetime//3kf 5min
-					this._sp.push(g.sprite.get(n));
+	const ROW = 32;
+	const COL = 25;
 
-					//this._ene.now--;
-				}
+	let player = {r:0, vr:0, x:0, y:0, trgger_delay:0};
+	let spriteTable;
+	let block;
+	let result;
+	let delay;
+	let trig_wait;
+	let stagetime;
+
+	let blkcnt;
+
+	let ene;
+	let watchdog;
+
+	function step_running_check(){
+		let stepc;
+		let store;
+
+		this.run = function(){
+			stepc++;
+		}
+		this.set = function(){
+			store = 0; 
+			stepc = 0;
+		}
+		this.check = function(){
+			return (stepc != store);
+		}
+	}
+
+	this.state = function() {
+
+		return {
+			ene: ene
+			,result: result
+			,time: stagetime
+			,stage: result.stage
+			,score: result.score
+			,delay: delay
+			,block: blkcnt
+			,collision: 0
+			,sprite: spriteTable.length
+			,clear: result.clrf
+			,gameover: result.govf
+		};
+	}
+
+	this.init = function(g){
+		watchdog = new step_running_check();
+
+		spriteTable = [];
+		this.reset(g);
+	}
+
+	this.reset = function(g){
+		g.sprite.set(0, "Player", true, 32, 32);
+		g.sprite.pos(0, 0, 0, 0, 1);
+		block = resetblock({on:true, break:false, hit:false});
+
+		for ( let i in block[24]){
+			block[24][i].break = true;
+		}
+
+		for (let i in this.spriteTable){
+			spriteTable[i].visible = false;
+		}
+
+		player = {r:0, vr:0, x:0, y:0, trgger_delay:0};
+		ene = {now:1000,max:1000,before: this.now};
+		result = {score:0, time:g.time(), stage:1, clrf:false, govf:false};
+
+		delay = 0;
+		trig_wait = 0;
+	}
+
+	function resetblock(sw){
+
+		let blk = new Array(COL);
+		for (let j=0; j<COL; j++){
+			blk[j] = new Array(ROW);
+			for (let i=0; i<ROW; i++){
+				blk[j][i] = {}//new sw;
+				blk[j][i].on = sw.on;
+				blk[j][i].break = sw.break;
+				blk[j][i].hit = sw.hit;
+			}
+		}
+		return blk;
+	}
+
+	this.step = function(g, input, param){
+
+		let x = input.x;
+		let y = input.y;
+		let trigger = input.trigger;
+		let lb = input.left;
+		let rb = input.right;
+
+		stagetime = Math.trunc((g.time() - result.time)/100);
+	
+		if (trigger) {
+			if (trig_wait < g.time()){
+				trig_wait = g.time()+250;
+
+				let n = g.sprite.get();//空値の場合は未使用スプライトの番号を返す。
+				g.sprite.set(n, "Enemy", true, 32, 32);
+
+				let px = x + Math.cos((Math.PI/180)*player.r)*48
+				let py = y + Math.sin((Math.PI/180)*player.r)*48 
+
+				g.sprite.pos(n, px, py, 0, 0.6 );
+				g.sprite.setMove(n, (player.r+90)% 360, 8, 3000);// number, r, speed, lifetime//3kf 5min
+				spriteTable.push(g.sprite.get(n));
 			}
 		}
 
-		if (this._result.govf||this._titlef) {
-			this._tc = g.time()+500;
-			return;	
-		} 
+		player.x = x;
+		player.y = y;
 
-	    if (mstate.wheel != 0) {
-			this._wh += Math.sign(mstate.wheel);
-			if (Math.abs(this._wh) >4) {
-				this._wh = Math.sign(mstate.wheel) * 4;
-			}
-		}
-
-		if (leftbutton){
-			this._wh = 0;
-			this._i-=4; 
+		if (lb)	player.r-=4; 
+		if (rb)	player.r+=4;
 		
-		}
-		if (rightbutton){
-			this.wh = 0;
-			this._i+=4;
-		}
+		if (delay < g.time()) {
 
-		if (this._tc < g.time()) {
+			delay = g.time()+500;
+			spriteTable = flashsp(spriteTable);
 
-			this._tc = g.time()+500;
-			this._sc = "";
-			this._dt = "";
-			
-			this._sp = flashsp(this._sp);
+			ene.before = ene.now;
+			result.clrf = false; 
 
-			this._ene.before = this._ene.now;
-			this._result.clrf = false; 
+			if (blkcnt <=0){ //Stage Clear;
+				let b = (10000-(g.time()-result.time));
+				
+				result.score += (b < 0)?100: b+100;//SCORE
+				result.time = g.time();
+				result.stage ++;
 
-			if (this._dc <=0){ //Stage Clear;
-				let b = (10000-(g.time()-this._result.time));
-				this._result.score += (b < 0)?100: b+100;//SCORE
-				this._result.time = g.time();
-				this._result.stage ++;
-
-				this._block = this._resetblock({on:true, break:false, hit:false});
-				for ( let i in this._block[24]){
-					this._block[24][i].break = true;
+				block = resetblock({on:true, break:false, hit:false});
+				for ( let i in block[24]){
+					block[24][i].break = true;
 				}
-				/*
-				this._block.on= this._resetblock(true);
-				this._block.break = this._resetblock(false);
-				this._block.hit= this._resetblock(false);
-				this._block.break[23].fill(true);
-				*/
-				//this._ene = {now:1000,max:1000,before: this.now};
-				this._ene.now = (this._ene.now +30>this._ene.max)?this._ene.max:this._ene.now +30;//ENERGY
 
-				this._result.clrf = true; 
-				this._tc = g.time()+1000;//MESSAGE WAIT
+				ene.now = (ene.now +30>ene.max)?ene.max:ene.now +30;//ENERGY
+
+				result.clrf = true; 
+				delay = g.time()+1500;//MESSAGE WAIT
 			}
-			if (this._ene.now <=0){ //Game Over;
+			if (ene.now <=0){ //Game Over;
 
 				g.sprite.reset(0);
 
-				this._ene.now = 0;
-				this._result.govf = true; 
-				this._dtt = g.time()+3000;//3s程入力抑止
-
+				delay = g.time()+3000;//MESSAGE WAIT
+				ene.now = 0;
+				result.govf = true; 
 			}
-
 		}
+
 		for (let i=0; i<=0; i++){
 			let c = g.sprite.check(i);//対象のSpriteに衝突しているSpriteNoを返す
 
 			for (let lp in c) {
-				this._sc += c[lp] + ",";
 				let spitem = g.sprite.get(c[lp]);//SpNo指定の場合は、SpriteItem
 				if (spitem.id == "Enemy"){
 					spitem.vx = spitem.vx*-1;//.05;
 					spitem.vy = spitem.vy*-1;//.05;
 				}
-				this._ene.now--;
+				ene.now--;
 				//spItemのrは更新されない(undefined):2024/04/08時点のバグ/coremin.js) 
 			}
 		}
 
-		this._sp = flashsp(this._sp);
+		spriteTable = flashsp(spriteTable);
 		function flashsp(s){
 			let ar = new Array(0);
 			for (let i in s){
@@ -411,17 +479,17 @@ class GameTask_Test extends GameTask {
 			return ar;
 		}
 		//---------------------breakcheck(block sprite hit check
-		for (let i in this._sp){
-			let p = this._sp[i];
+		for (let i in spriteTable){
+			let p = spriteTable[i];
 			let cx = Math.trunc(p.x/32);
 			let cy = Math.trunc(p.y/32);
-			if (cy < this._block.length){
-				if (cx < this._block[cy].length){
-					if (this._block[cy][cx].on){
+			if (cy < block.length){
+				if (cx < block[cy].length){
+					if (block[cy][cx].on){
 						if (p.id == "Enemy"){
-							this._block[cy][cx].on = false;
-							this._block[cy][cx].break = true;
-							this._block[cy][cx].hit = true;
+							block[cy][cx].on = false;
+							block[cy][cx].break = true;
+							block[cy][cx].hit = true;
 
 							if (p.beforehit){
 								p.vx = p.vx*-1;//.05
@@ -431,21 +499,17 @@ class GameTask_Test extends GameTask {
 								if (Math.abs(p.vx) <= Math.abs(p.vy)) p.vy = p.vy*-1;//.05;
 							}
 							p.beforehit = true;
-							//p.vx = p.vx*-1;//.05;
-							//p.vy = p.vy*-1;//.05;
 
-							this._result.score ++;
+							result.score ++;
 						}else{
 							if (p.id == "block"){
 								if (cy>=1){
-								this._block[cy-1][cx].on = true;
-								this._block[cy-1][cx].break = false;
+								block[cy-1][cx].on = true;
+								block[cy-1][cx].break = false;
 								//this._bhtm[cy-1][cx] = false;
 								p.visible = false;
 								}
 							}
-							//p.vx = p.vx*-1.1;
-							//p.vy = p.vy*-1.1;
 						}
 					}else{
 						p.beforehit = false;
@@ -459,8 +523,7 @@ class GameTask_Test extends GameTask {
 		let c = []; 
 		for (let i=0; i<ROW; i++){
 			for (let j=COL-1; j>=0; j--){
-				//console.log("i:" + i + ",j:"+ j);
-				if (this._block[j][i].on){
+				if (block[j][i].on){
 						if (!f){
 							c.push({x:i,y:j});
 						}
@@ -482,112 +545,214 @@ class GameTask_Test extends GameTask {
 		}
 		*/
 		for (let i in c){
-			if (!this._block[c[i].y][c[i].x].break){
-				this._block[c[i].y][c[i].x].break = true;
-				this._block[c[i].y][c[i].x].on = false;
+			if (!block[c[i].y][c[i].x].break){
+				block[c[i].y][c[i].x].break = true;
+				block[c[i].y][c[i].x].on = false;
 				let n = g.sprite.get();//空値の場合は未使用スプライトの番号を返す。
 				g.sprite.set(n, "block", true, 32, 32);
 				g.sprite.pos(n, c[i].x*32, c[i].y*32+32);
 				g.sprite.setMove(n, 180, 6, 500);// number, r, speed, lifetime
-				this._sp.push(g.sprite.get(n));
+				spriteTable.push(g.sprite.get(n));
 			}
 		}
-		
+		watchdog.run();
 	}
-//----------------------------------------------------------------------
-	draw(g){// this.visible が true時にループ毎に実行される。
 
-		let st;
-		if (!this._result.govf&&!this._titlef){
-			st = " Time:" + Math.trunc((g.time() - this._result.time)/100);
-			g.sprite.pos(0, this._x, this._y,  (this._i+90)% 360, 1);
-		}else{
-			st = " Time: 0";
+	this.draw = function(g){
+
+		if (!result.govf){
+			g.sprite.pos(0, player.x, player.y,  (player.r+90)% 360, 1);
+
 		}
 
 	    //g.sprite.pos(0, this._x, this._y,  (this._i+90)% 360, 1);
 
-		this._dc = 0;
+		blkcnt = 0;
 		for (let i=0; i<32; i++){
 			for (let j=0; j<24; j++){
-				if (this._block[j][i].on){
+				if (block[j][i].on){
 					g.screen[0].fill(i*32,j*32+8,31,23,"rgb(" + (i*8)%256 + "," + (j*8)%256 + ",255)");
-					this._dc++;
+					blkcnt++;
 				}
-				if ((!this._block[j][i].break)&&(!this._block[j][i].hit)){
+				if ((!block[j][i].break)&&(!block[j][i].hit)){
 					g.screen[0].fill(i*32+8,j*32,16,7,"rgb(" + (i*8)%256 + "," + (j*8)%256 + ",255)");
 					//g.screen[0].fill(i*32,j*32,15,15,"rgb(" + (i*8)%64 + "," + (j*8)%64 + ",127)");
 				}
-				if (this._block[j][i].hit){
+				if (block[j][i].hit){
 					g.screen[0].fill(i*32+14,j*32+2,4,2,"rgb(" + (i*8)%64+128 + "," + (j*8)%64+128 + ",127)");
 				}
 			}
 		}
 
-		for (let i in this._sp){
-			let p = this._sp[i];
+		for (let i in spriteTable){
+			let p = spriteTable[i];
 			if (p.id == "block"){
 				g.screen[0].fill(p.x,p.y-32,31,23,"white");
 				g.screen[0].fill(p.x+1,p.y-31,29,21,"rgb(" + (Math.trunc(p.x/32)*8)%256 + "," + (Math.trunc((p.y-32)/32)*8)%256 + ",255)");
 			}
 		}
 
-		//hr = this._wh*8;
-		/*
-		let px = this._x + Math.cos((Math.PI/180)*this._i)*48;
-		let py = this._y + Math.sin((Math.PI/180)*this._i)*48; 
-
-		g.screen[0].fill(px, py,4,4,"red");
-		*/
-
-		g.screen[0].fill(1024 - 100, 0,100,48,"black");
-
-		const BAR_Y = 32;
-		g.screen[0].fill(0, BAR_Y  ,1024,16,"white");
-		g.screen[0].fill(1, BAR_Y+1,1022,14,"black");
-		g.screen[0].fill(1, BAR_Y+1,1022*(this._ene.before/this._ene.max), 14,"yellow");
-		g.screen[0].fill(1, BAR_Y+1,1022*(this._ene.now/this._ene.max), 14,((this._ene.now/this._ene.max)<0.2)?"red":"cyan");
-
-		g.font["std"].putchr("ENERGY:" + this._ene.now + " SCORE:" + Math.trunc(this._result.score) + " STAGE:" + this._result.stage + " " +st, 0, 0);
-		g.font["8x8white"].putchr("block:" + this._dc, 1024 - 100, 24);
-		g.font["8x8white"].putchr("DeltaT:" + g.deltaTime().toString().substring(0, 5), 1024 - 100, 0);
-		g.font["8x8green"].putchr("Col:" + this._sc.length*2 + "/s", 1024 - 100, 8);
-		g.font["8x8red"].putchr("Sprite:" + this._sp.length, 1024 - 100, 16);
-		//g.font["8x8white"].putchr("INPUT:" + this._sk, 0, 16);
-
-		if ((this._ene.now != this._ene.before)&&(this._ene.now >0)){
-			let w = {x:this._x, y:this._y, c:((this._ene.now/this._ene.max)<0.2)?"red":"yellow"
-				, draw(dev){
-					dev.beginPath();
-					dev.strokeStyle = this.c;
-					dev.lineWidth = 4;
-					dev.arc(this.x, this.y, 32, 0, 2 * Math.PI, false);
-					dev.stroke();
-				} 
+		if (watchdog.check()){
+			if ((ene.now != ene.before)&&(ene.now >0)){
+				let w = {x:player.x, y:player.y, c:((ene.now/ene.max)<0.2)?"red":"yellow"
+					, draw(dev){
+						dev.beginPath();
+						dev.strokeStyle = this.c;
+						dev.lineWidth = 4;
+						dev.arc(this.x, this.y, 32, 0, 2 * Math.PI, false);
+						dev.stroke();
+					} 
+				}
+				g.screen[0].putFunc(w);
+				//g.screen[0].fill(this._x-32, this._y-32, 64 ,64,"yellow");
 			}
-			g.screen[0].putFunc(w);
-			//g.screen[0].fill(this._x-32, this._y-32, 64 ,64,"yellow");
 		}
-
-		if (this._result.clrf){
-			g.font["std"].putchr("STAGE CLEAR", 1024/2-150, 768/2, 2.5);
-			//g.font["8x8white"].putchr(":" + (((this._tc - g.time()) <0)?"OK":"WAIT") , 1024/2, 768/2+16);
-		}
-		if (this._result.govf){
-			g.font["std"].putchr("GAME OVER", 1024/2-200, 768/2-50, 4.0);
-			g.font["std"].putchr("STAGE:" + this._result.stage, 1024/2-80, 768/2, 2.0);
-			g.font["std"].putchr("SCORE:" + Math.trunc(this._result.score), 1024/2-80, 768/2+30, 2.0);
-			g.font["8x8white"].putchr(":" + (((this._dtt - g.time()) <0)?"OK":"WAIT") , 1024/2+120, 768/2);
-		}
-		if (this._titlef){
-			g.font["std"].putchr("THEME BLOCK/BALLANCE(DONICHI THREAD16)", 1024/2-200, 768/2-116);
-			g.screen[0].putImage(g.asset.image["title"].img,1024/2-250,768/2-100);
-			g.font["std"].putchr("START MOUSE BUTTON", 1024/2-200, 768/2+50, 2.0);
-			g.font["std"].putchr("or GamePad Button X/A", 1024/2-100, 768/2+70);
-		}
+		//g.screen[0].fill(player.x, player.y, 32,32,(watchdog.check())?"cyan":"red");
+		watchdog.set();
 	}
 }
 //----------------------------------------------------------------------
+// UI
+function SceneGameUI(){
+
+	const X = 0;
+	const Y = 0;
+	const BAR_Y = 32;
+
+	let ene;
+	let result;
+	let time;
+
+	this.step = function(g, input, p){
+
+		ene = p.ene;
+		result = p.result;
+		time = p.time
+	}
+	this.draw = function(g){
+
+		const BAR_Y = 32;
+		g.screen[0].fill(X	,Y+BAR_Y  ,1024,16,"white");
+		g.screen[0].fill(X+1,Y+BAR_Y+1,1022,14,"black");
+		g.screen[0].fill(X+1,Y+BAR_Y+1,1022*(ene.before	/ene.max), 14,"yellow");
+		g.screen[0].fill(X+1,Y+BAR_Y+1,1022*(ene.now	/ene.max), 14,((ene.now/ene.max)<0.2)?"red":"cyan");
+
+		g.font["std"].putchr("ENERGY:" + ene.now + " SCORE:" + Math.trunc(result.score) + " STAGE:" + result.stage + " TIME:" + time, X, Y);
+	}
+}
+//----------------------------------------------------------------------
+// TitleScene
+function SceneResult(){
+
+	const X = 1024/2-150;
+	const Y = 768/2;
+
+	this.step = function(g, input){
+		//Non Process (Draw Only)
+
+	}
+	this.draw = function(g){
+
+		g.font["std"].putchr("STAGE CLEAR", X, Y, 2.5);
+	}
+}
+//----------------------------------------------------------------------
+// TitleScene
+function SceneTitle(){
+
+	const X = 1024/2;
+	const Y = 768/2;
+
+	let inp;
+
+	this.step = function(g, input, p){
+		inp = input;
+
+		delay = ((p.delay - g.time()) <0);
+
+		let rf = false;
+		if (delay){
+			if (input.trigger) rf = true;
+		}	
+		return rf;
+	}
+	this.draw = function(g){
+
+		g.font["std"].putchr("THEME BLOCK/BALLANCE(DONICHI THREAD16)", X-200, Y-116);
+		g.screen[0].putImage(g.asset.image["title"].img,X-250, Y-100	);
+		g.font["std"].putchr("START MOUSE BUTTON",		X-200, Y+50	, 2.0);
+		g.font["std"].putchr("or GamePad Button X/A",	X-100, Y+70		);
+		
+	}
+}
+//----------------------------------------------------------------------
+// GameOverScene
+function SceneGameOver(){
+
+	const X = 1024/2;
+	const Y = 768/2;
+
+	let stage;
+	let score;
+	let delay;
+
+	this.step = function(g, input, p){
+
+		stage = p.stage;
+		score = Math.trunc(p.score);
+		delay = ((p.delay - g.time()) <0);
+
+		if (delay){
+			if (input.trigger){
+				return true;
+			};
+		}
+	}
+	this.draw = function(g){
+
+		g.font["std"	].putchr("GAME OVER",		 X-200, Y-50, 4.0);
+		g.font["std"	].putchr("STAGE:" + stage,	 X-80, Y, 2.0);
+		g.font["std"	].putchr("SCORE:" + score, X-80, Y+30, 2.0);
+		g.font["8x8white"].putchr(":" + (delay?"OK":"WAIT") , X+120, Y);
+	}
+}
+//----------------------------------------------------------------------
+// DEBUGScene
+function SceneDebug(){
+
+	const X = 1024 - 100;
+	const Y = 0;
+
+	let block;
+	let deltatime;
+	let collision;
+	let sprite;
+	let input;
+
+	this.step = function(g, i, p){
+
+		block	= p.block;
+		deltatime= g.deltaTime().toString().substring(0, 5);
+		collision= p.collision;
+		sprite	= p.sprite;
+		input = i;
+	}
+	this.draw = function(g){
+
+		g.screen[0].fill(1024 - 100, 0,100,32,"black");
+
+		g.font["8x8white"	].putchr("block:"	 + block	,X, Y+24);
+		g.font["8x8white"	].putchr("DeltaT:"	 + deltatime,X, Y	);
+		g.font["8x8red"		].putchr("Sprite:"	 + sprite	,X, Y+ 8);
+		let T = (input.trigger)?"T":"-";
+		let L = (input.left)?"L":"-";
+		let R = (input.right)?"R":"-";
+		g.font["8x8green"	].putchr("Input:" + T + ":" + L + ":" + R , X, Y+16);
+	}
+}
+
+//----------------------------------------------------------------------
+//Image Asset Setup
 function pictdata(g){
 
 	g.asset.imageLoad( "SPGraph"
