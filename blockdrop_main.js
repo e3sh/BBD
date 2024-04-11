@@ -570,19 +570,33 @@ function SceneGame(){
 
 	    //g.sprite.pos(0, this._x, this._y,  (this._i+90)% 360, 1);
 
+		let l = (Math.trunc(g.time()/100)%2);
 		blkcnt = 0;
 		for (let i=0; i<32; i++){
 			for (let j=0; j<24; j++){
 				if (block[j][i].on){
-					g.screen[0].fill(i*32,j*32+8,31,23,"rgb(" + (i*8)%256 + "," + (j*8)%256 + ",255)");
+					if (true){
+						g.screen[0].fill(i*32,j*32+8,31,23,"rgb(" + (i*8)%256 + "," + (j*8)%256 + ",255)");
+					}else{
+						g.screen[0].fill(i*32,j*32+8,31,23,"rgb(" + (i*8)%256 + "," + (j*8)%256 + ",255)");
+					}
 					blkcnt++;
 				}
 				if ((!block[j][i].break)&&(!block[j][i].hit)){
-					g.screen[0].fill(i*32+8,j*32,16,7,"rgb(" + (i*8)%256 + "," + (j*8)%256 + ",255)");
+					if (true){
+						g.screen[0].fill(i*32+4,j*32,23,7,"rgb(" + (i*8)%256 + "," + (j*8)%256 + ",255)");
+					}else{
+						g.screen[0].fill(i*32+3,j*32,23,7,"rgb(" + (i*8)%256 + "," + (j*8)%256 + ",255)");
+					}
 					//g.screen[0].fill(i*32,j*32,15,15,"rgb(" + (i*8)%64 + "," + (j*8)%64 + ",127)");
 				}
 				if (block[j][i].hit){
-					g.screen[0].fill(i*32+14,j*32+2,4,2,"rgb(" + (i*8)%64+128 + "," + (j*8)%64+128 + ",127)");
+					if (l==0){
+						g.screen[0].fill(i*32+15,j*32+2,3,2,"rgb(" + (i*8)%64+128 + "," + (j*8)%64+128 + ",127)");
+					}else{
+						g.screen[0].fill(i*32+16,j*32+2,2,2,"rgb(" + (i*8)%64+128 + "," + (j*8)%64+128 + ",127)");
+					}
+					//g.screen[0].fill(i*32+14,j*32+2,4,2,"rgb(" + (i*8)%64+128 + "," + (j*8)%64+128 + ",127)");
 				}
 			}
 		}
