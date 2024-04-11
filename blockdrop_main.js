@@ -254,6 +254,7 @@ class GameTask_Main extends GameTask {
 		this._result = param.result;
 
 		if (this._titlef){
+			param.block = 0; param.sprite = 0;
 			if (this.scene["Title"].step(g, input, {delay: this.titlewait} )){
 				this._titlef = false; 
 			}
@@ -270,8 +271,8 @@ class GameTask_Main extends GameTask {
 //----------------------------------------------------------------------
 	draw(g){// this.visible が true時にループ毎に実行される。
 
-		this.scene["Game"].draw(g);
-		this.scene["UI"].draw(g);
+		if (!this._titlef)this.scene["Game"].draw(g);
+		if (!this._titlef) this.scene["UI"].draw(g);
 		this.scene["Debug"].draw(g);
 	
 		if (this._result.clrf) this.scene["Result"].draw(g);
@@ -343,7 +344,7 @@ function SceneGame(){
 
 	this.reset = function(g){
 		g.sprite.set(0, "Player", true, 32, 32);
-		g.sprite.pos(0, 0, 0, 0, 1);
+		g.sprite.pos(0, 0, 0, 0, 0.01);
 		block = resetblock({on:true, break:false, hit:false});
 
 		for ( let i in block[24]){
@@ -560,6 +561,8 @@ function SceneGame(){
 
 	this.draw = function(g){
 
+		let wdt = watchdog.check();
+
 		if (!result.govf){
 			g.sprite.pos(0, player.x, player.y,  (player.r+90)% 360, 1);
 
@@ -592,7 +595,7 @@ function SceneGame(){
 			}
 		}
 
-		if (watchdog.check()){
+		if (wdt){//watchdog.check()){
 			if ((ene.now != ene.before)&&(ene.now >0)){
 				let w = {x:player.x, y:player.y, c:((ene.now/ene.max)<0.2)?"red":"yellow"
 					, draw(dev){
