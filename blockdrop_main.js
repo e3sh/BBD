@@ -11,6 +11,12 @@ function main() {
 
 	let game = new GameCore( sysParam );
 
+	let gpad = new inputGamepad2();
+	//let spc = new GameSpriteControl2(game);
+
+	game.gamepad = gpad;
+	//game.sprite = spc;
+
     //Game Asset Setup
 	pictdata(game);
 
@@ -100,6 +106,8 @@ class GameTask_Main extends GameTask {
 	_wh = 0;//wheel
 
 	scene;
+
+	_dv;
 	
 	constructor(id){
 		super(id);
@@ -114,6 +122,8 @@ class GameTask_Main extends GameTask {
 		this.scene[	"Result"] = new SceneResult();
 		this.scene["GameOver"] = new SceneGameOver();
 		this.scene[	"Title"	] = new SceneTitle();
+		this.scene[	"Gpad"	] = new SceneGPad();
+
 		
  	    //g.font["8x8white"].useScreen(1);
 
@@ -204,6 +214,7 @@ class GameTask_Main extends GameTask {
 
 		let akey = false; if (Boolean(w[65])) {if (w[65]) akey = true;}
 		let dkey = false; if (Boolean(w[68])) {if (w[68]) dkey = true;}
+		let pkey = false; if (Boolean(w[80])) {if (w[80]) pkey = true;}
 
 		let r = g.gamepad.check();
 
@@ -267,6 +278,10 @@ class GameTask_Main extends GameTask {
 
 		this.scene["UI"].step(g, input, param);
 		this.scene["Debug"].step(g, input, param);
+
+		this._dv = (pkey)?true:false;
+		if (this._dv) this.scene["Gpad"].step(g, input, param);
+
 	}
 //----------------------------------------------------------------------
 	draw(g){// this.visible が true時にループ毎に実行される。
@@ -278,6 +293,7 @@ class GameTask_Main extends GameTask {
 		if (this._result.clrf) this.scene["Result"].draw(g);
 		if (this._result.govf) this.scene["GameOver"].draw(g);
 		if (this._titlef) this.scene["Title"].draw(g);
+		if (this._dv) this.scene["Gpad"].draw(g);
 	}
 }
 //----------------------------------------------------------------------
@@ -765,6 +781,26 @@ function SceneDebug(){
 		let L = (input.left)?"L":"-";
 		let R = (input.right)?"R":"-";
 		g.font["8x8green"	].putchr("Input:" + T + ":" + L + ":" + R , X, Y+16);
+	}
+}
+//----------------------------------------------------------------------
+// GPadScene
+function SceneGPad(){
+
+	const X = 0;
+	const Y = 48;
+
+	let st;
+
+	this.step = function(g, i, p){
+
+		st = g.gamepad.infodraw()
+	}
+	this.draw = function(g){
+
+		for (let i in st){
+			g.font["8x8white"].putchr(st[i],X, Y+i*8);
+		}
 	}
 }
 
