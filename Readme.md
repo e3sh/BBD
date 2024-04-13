@@ -12,7 +12,6 @@ https://e3sh.github.io/BBD/BLOCKDROPdnc.html
 *Release版 動作確認URL:*
 https://e3sh.github.io/BBD/release/BLOCKDROPdnc.html
 
-(2024/04/10提出分) 
 
 #### 提出先情報
 
