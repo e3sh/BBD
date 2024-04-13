@@ -1,4 +1,4 @@
-// main BLOCKDROP
+// main BLOCKDROP SpriteControl2
 //----------------------------------------------------------------------
 function main() {
 
@@ -11,13 +11,7 @@ function main() {
 
 	let game = new GameCore( sysParam );
 
-	//let gpad = new inputGamepad2();
-	//let spc = new GameSpriteControl2(game);
-
-	//game.gamepad = gpad;
-	//game.sprite = spc;
-
-    //Game Asset Setup
+	//Game Asset Setup
 	pictdata(game);
 
 	let spfd = SpriteFontData();
@@ -166,11 +160,10 @@ class GameTask_Main extends GameTask {
 	            ]
 	        }
         )
-	    g.sprite.set(0, "Player", true, 32, 32);
 
 		this.scene["Game"].init(g);
 		this._initGame(g);
-		this._sm = {x:0, y:0, old_x:0, old_y:0};
+		this._sm = {x:0, y:0, old_x:0, old_y:0};//mouse移動有無のチェック用
 	}
 
 	_resetblock(sw){
@@ -312,6 +305,7 @@ function SceneGame(){
 	let delay;
 	let trig_wait;
 	let stagetime;
+	let myship;
 
 	let blkcnt;
 
@@ -354,15 +348,16 @@ function SceneGame(){
 	this.init = function(g){
 		watchdog = new step_running_check();
 
-		spriteTable = [];
+		spriteTable = g.sprite.itemList();
 		this.reset(g);
 	}
 
 	this.reset = function(g){
-		g.sprite.set(0, "Player", true, 32, 32);
-		g.sprite.pos(0, 0, 0, 0, 0.01);
-		block = resetblock({on:true, break:false, hit:false});
+		g.sprite.itemFlash()
+		myship = g.sprite.itemCreate("Player", true, 32, 32);
+		myship.pos(0,0);
 
+		block = resetblock({on:true, break:false, hit:false});
 		for ( let i in block[24]){
 			block[24][i].break = true;
 		}
@@ -408,15 +403,15 @@ function SceneGame(){
 			if (trig_wait < g.time()){
 				trig_wait = g.time()+250;
 
-				let n = g.sprite.get();//空値の場合は未使用スプライトの番号を返す。
-				g.sprite.set(n, "Enemy", true, 32, 32);
+				//let n = g.sprite.get();//空値の場合は未使用スプライトの番号を返す。
+				let sp = g.sprite.itemCreate("Enemy", true, 32, 32);
 
 				let px = x + Math.cos((Math.PI/180)*player.r)*48
 				let py = y + Math.sin((Math.PI/180)*player.r)*48 
 
-				g.sprite.pos(n, px, py, 0, 0.6 );
-				g.sprite.setMove(n, (player.r+90)% 360, 8, 3000);// number, r, speed, lifetime//3kf 5min
-				spriteTable.push(g.sprite.get(n));
+				sp.pos(px, py, 0, 0.6 );
+				sp.move((player.r+90)% 360, 8, 3000);// number, r, speed, lifetime//3kf 5min
+				//spriteTable.push(g.sprite.get(n));
 			}
 		}
 
@@ -429,10 +424,12 @@ function SceneGame(){
 		if (delay < g.time()) {
 
 			delay = g.time()+500;
-			spriteTable = flashsp(spriteTable);
+			//spriteTable = flashsp(spriteTable);
 
 			ene.before = ene.now;
 			result.clrf = false; 
+
+			g.sprite.itemIndexRefresh();
 
 			if (blkcnt <=0){ //Stage Clear;
 				let b = (10000-(g.time()-result.time));
@@ -453,7 +450,7 @@ function SceneGame(){
 			}
 			if (ene.now <=0){ //Game Over;
 
-				g.sprite.reset(0);
+				myship.dispose();
 
 				delay = g.time()+3000;//MESSAGE WAIT
 				ene.now = 0;
@@ -461,21 +458,27 @@ function SceneGame(){
 			}
 		}
 
-		for (let i=0; i<=0; i++){
-			let c = g.sprite.check(i);//対象のSpriteに衝突しているSpriteNoを返す
+		g.sprite.CollisionCheck(); 
+
+		//for (let i=0; i<=0; i++){
+			//let c = g.sprite.check(i);//対象のSpriteに衝突しているSpriteNoを返す
+			let c = myship.hit;//戻りは衝突オブジェクトのリスト
 
 			for (let lp in c) {
-				let spitem = g.sprite.get(c[lp]);//SpNo指定の場合は、SpriteItem
+				let spitem = c[lp];//SpNo指定の場合は、SpriteItem
 				if (spitem.id == "Enemy"){
-					spitem.vx = spitem.vx*-1;//.05;
-					spitem.vy = spitem.vy*-1;//.05;
+					spitem.vx = spitem.x - myship.x//vx*-1;//.05;
+					spitem.vy = spitem.y - myship.y//spitem.vy*-1;//.05;
+				}
+				if (spitem.id == "block"){
+					spitem.vx = spitem.x - myship.x//vx*-1;//.05;
+					spitem.vy = spitem.y - myship.y//spitem.vy*-1;//.05;
+					ene.now -=7; 
 				}
 				ene.now--;
-				//spItemのrは更新されない(undefined):2024/04/08時点のバグ/coremin.js) 
 			}
-		}
-
-		spriteTable = flashsp(spriteTable);
+		//}
+		spriteTable = flashsp(g.sprite.itemList());
 		function flashsp(s){
 			let ar = new Array(0);
 			for (let i in s){
@@ -483,7 +486,7 @@ function SceneGame(){
 				if ((p.x < 0)||(p.x > 1024)||(p.y < 0)||(p.y>768)) {//p.visible = false;
 
 					if ((p.x < 0)||(p.x > 1024)) p.vx *=-1;//.05;
-					if ((p.y < 0)||(p.y>768)) p.visible = false;//p.vy *=-1.05;
+					if ((p.y < 0)||(p.y>768)) p.dispose();//p.vy *=-1.05;
 
 					if (p.x < 0) p.x = 0;
 					if (p.x > 1024) p.x = 1024;
@@ -495,9 +498,40 @@ function SceneGame(){
 			}
 			return ar;
 		}
+		//spriteTable = g.sprite.itemList();
 		//---------------------breakcheck(block sprite hit check
 		for (let i in spriteTable){
 			let p = spriteTable[i];
+			/*
+			let c =p.hit;//戻りは衝突オブジェクトのリスト
+			for (let lp in c) {
+				let spitem = c[lp];//SpNo指定の場合は、SpriteItem
+				if (p.id == "Enemy"){
+					if (spitem.id == "Enemy"){
+						p.vx = p.vx*-1;//.05;
+						p.vy = p.vy*-1;//.05;
+
+						spitem.vx = spitem.x - p.x//vx*-1;//.05;
+						spitem.vy = spitem.y - p.y//spitem.vy*-1;//.05;
+	
+
+						//spitem.vx = spitem.vx*-1; 
+						//spitem.vy = spitem.vy*-1;
+						//p.vx =0;
+						//p.vy = 0;
+						//p.dispose();
+						//spitem.dispose();
+					}
+					if (spitem.id == "Block"){
+						spitem.dispose();
+
+						//p.vx = p.vx*-1;//.05;
+						//p.vy = p.vy*-1;//.05;
+					}
+	
+				}
+			}
+			*/
 			let cx = Math.trunc(p.x/32);
 			let cy = Math.trunc(p.y/32);
 			if (cy < block.length){
@@ -521,10 +555,10 @@ function SceneGame(){
 						}else{
 							if (p.id == "block"){
 								if (cy>=1){
-								block[cy-1][cx].on = true;
-								block[cy-1][cx].break = false;
-								//this._bhtm[cy-1][cx] = false;
-								p.visible = false;
+									block[cy-1][cx].on = true;
+									block[cy-1][cx].break = false;
+									//this._bhtm[cy-1][cx] = false;
+									p.dispose();
 								}
 							}
 						}
@@ -537,7 +571,7 @@ function SceneGame(){
 		//-scan
 		
 		let f = false;
-		let c = []; 
+		c = []; 
 		for (let i=0; i<ROW; i++){
 			for (let j=COL-1; j>=0; j--){
 				if (block[j][i].on){
@@ -565,11 +599,11 @@ function SceneGame(){
 			if (!block[c[i].y][c[i].x].break){
 				block[c[i].y][c[i].x].break = true;
 				block[c[i].y][c[i].x].on = false;
-				let n = g.sprite.get();//空値の場合は未使用スプライトの番号を返す。
-				g.sprite.set(n, "block", true, 32, 32);
-				g.sprite.pos(n, c[i].x*32, c[i].y*32+32);
-				g.sprite.setMove(n, 180, 6, 500);// number, r, speed, lifetime
-				spriteTable.push(g.sprite.get(n));
+				//let n = g.sprite.get();//空値の場合は未使用スプライトの番号を返す。
+				let sp = g.sprite.itemCreate("block", true, 32, 32);
+				sp.pos(c[i].x*32, c[i].y*32+32);
+				sp.move(180, 4, 500);// number, r, speed, lifetime
+				//spriteTable.push(g.sprite.get(n));
 			}
 		}
 		watchdog.run();
@@ -580,8 +614,8 @@ function SceneGame(){
 		let wdt = watchdog.check();
 
 		if (!result.govf){
-			g.sprite.pos(0, player.x, player.y,  (player.r+90)% 360, 1);
-
+			myship.pos(player.x, player.y, (player.r+90)% 360, 1);
+			myship.view();
 		}
 
 	    //g.sprite.pos(0, this._x, this._y,  (this._i+90)% 360, 1);
@@ -617,6 +651,7 @@ function SceneGame(){
 			}
 		}
 
+		spriteTable = g.sprite.itemList();
 		for (let i in spriteTable){
 			let p = spriteTable[i];
 			if (p.id == "block"){

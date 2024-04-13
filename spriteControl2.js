@@ -2,23 +2,13 @@
 // BLOCKDROP operation Version 
 // (editstart 2024/04/12)
 
-/* --- Functions
-//(old compatibility)
-.set(num, id, col, w, h)
-.setMove = function (num, r, v, aliveTime) 
-.pos = function (num, x, y, r, z=0) 
-.reset = function (num ) 
-.get = function (num) (new)Spitem (set)num
-.check = function (num) return num_list
-.put = function (num, x, y, r, z) 
-
+/*
 //system Method
 .manualDraw = function (bool) (modeChange)
 .useScreen = function( num )
 .setPattern = function (id, Param) 
 
-(2024/04/12-)
-//New Function Method
+//Speite Function Method
 .itemCreate = function(Ptn_id, col=false, w=0, h=0 ) return item
 .itemList = function() return SpriteTable
 .itemFlash = function()
@@ -49,50 +39,23 @@ function GameSpriteControl(g) {
 
     function SpItem(){
 
-        let x_, y_, r_, z_; //z (reserve)
-        let vx_, vy_;
-        let pr_, colE_, col_;//num, bool, {w,h}
-        let id_, count_, pcnt_;//
-        let v_, hit_;//visible bool, []
-        let alive_, index_, live_;
-
-        function variable_reset(){
-
-            x_=0; y_=0; r_=0; z_=0;
-            vx_=0; vy_=0; 
-            pr_=0; colE_=true; col_={w:0,h:0};
-            id_=""; count_=0; pcnt_=0;
-            v_=false; hit_=[];
-            alive_=0; index_=0; live_=true;
-        }
-
-        variable_reset();
-        prop_set();
-
-        //inital
-        this.x  = x_; this.y  = y_; this.r  = r_; this.z  = z_;
-        this.vx = vx_;this.vy = vy_;
-        this.priority = pr_;
-        this.collisionEnable = colE_; this.collision = col_;
-        this.id = id_;
-        this.count = count_; this.pcnt = pcnt_;
-        this.visible = v_;
-        this.hit = hit_;
-        this.alive = alive_; //SetMove Frame Length
-        this.index = index_; //index No
-        this.living = live_; //Bool true
-    
-        function prop_set(){
-            this.x  = x_; this.y  = y_; this.r  = r_; this.z  = z_;
-            this.vx = vx_;this.vy = vy_;
-            this.priority = pr_;
-            this.collisionEnable = colE_; this.collision = col_;
-            this.id = id_;
-            this.count = count_; this.pcnt = pcnt_;
-            this.visible = v_; this.hit = hit_;
-            this.alive = alive_; this.index = index_; 
-            this.living = live_;
-        }
+        this.x  = 0;
+        this.y  = 0;
+        this.r  = 0;
+        this.z  = 0;
+        this.vx = 0;
+        this.vy = 0;
+        this.priority = 0;
+        this.collisionEnable = true;
+        this.collision = {w:0,h:0};
+        this.id = "";
+        this.count = 0;
+        this.pcnt = 0;
+        this.visible = false;
+        this.hit = [];
+        this.alive = 0;
+        this.index = 0; 
+        this.living = true;
 
         this.view = function (){ this.visible = true; }
         this.hide = function (){ this.visible = false;}
@@ -132,36 +95,68 @@ function GameSpriteControl(g) {
         }
         //内部処理用
         this.reset = function(){
-            variable_reset();
-            prop_set()
+
+            this.x  = 0;
+            this.y  = 0;
+            this.r  = 0;
+            this.z  = 0;
+            this.vx = 0;
+            this.vy = 0;
+            this.priority = 0;
+            this.collisionEnable = true;
+            this.collision = {w:0,h:0};
+            this.id = "";
+            this.count = 0;
+            this.pcnt = 0;
+            this.visible = false;
+            this.hit = [];
+            this.alive = 0;
+            this.index = 0; 
+            this.living = true;
+        }
+
+        this.debug = function(){
+            let st = [];
+
+            st.push("this.x" + this.x);
+            st.push("this.y" + this.y);
+            st.push("this.r" + this.r);
+            st.push("this.z" + this.z);
+            st.push("this.vx" + this.vx);
+            st.push("this.vy" + this.vy);
+            st.push("this.priority" + this.priority);
+            st.push("this.collisionEnable" + this.collisionEnable);
+            st.push("this.collision" +this.collision);
+            st.push("this.id," + this.id);
+            st.push("this.count," +this.count);
+            st.push("this.pcnt," +this.pcnt);
+            st.push("this.visible," + this.visible);
+            st.push("this.hit," + this.hit);
+            st.push("this.alive," + this.alive);
+            st.push("this.index," + this.index); 
+            st.push("this.living," + this.living);
+
+            return st;            
         }
     }
     //New add Methods ============================
     this.itemCreate = function(Ptn_id, col=false, w=0, h=0 ){
-        //disposeしたItemがある場合、そこを再利用
-        let n = -1;
-        for (let i in sprite_){
-            if (!sprite_[i].living){n = i;}
-        }
-
-        let item;
-        if (n == -1){
-            item = new SpItem();
-            n = sprite_.length;
-            sprite_.push(item);
-        }
-
-        item = sprite_[n];
+        const item = new SpItem();
+        let n = sprite_.length;
+        sprite_.push(item);
+        
         item.reset();
         item.index = n;
 
-        item = id;
+        item.id = Ptn_id;
         item.count = 0;
         item.pcnt = 0;
 
         item.collisionEnable = col;
         item.collision = { w: w, h: h };
 
+        //let st = item.debug();
+        //for (let s of st) console.log(s);
         //default visible:false alive:0
 
         return item;
@@ -182,88 +177,7 @@ function GameSpriteControl(g) {
         sprite_ = ar;
         return sprite_
     }
-
-    //oldversion ===============================================
-    //sprite.set( spPtn ,[priority])
-    //  collisisonEnable 
-    //  size w,h
-    // 
-    //return num => new .itemCreate(id, col, w, h)
-    this.set = function (num, id, col, w, h) {
-
-        let it = this.itemCreate(id, col, w, h);
-
-        /*
-        if (!Boolean(sprite_[num])) {
-            sprite_[num] = new SpItem();
-        }
-        
-        sprite_[num].id = id;
-        sprite_[num].count = 0;
-        sprite_[num].pcnt = 0;
-
-        if (Boolean(col)) {
-            
-            sprite_[num].collisionEnable = true;
-            sprite_[num].collision = { w: w, h: h };
-         } else {
-
-            sprite_[num].collisionEnable = false;
-        }
-
-        sprite_[num].visible = false;
-        */
-    }
-    //old_version => new sprite_[].move(r, v, aliveTime)
-    this.setMove = function (num, r, v, aliveTime) {
-        let sw = sprite_[num];
-
-        sw.move(r, v, aliveTime);
-        sw.view();
-        /*
-        let wr = ((r - 90) * (Math.PI / 180.0));
-
-        sw.vx = Math.cos(wr) * v;
-        sw.vy = Math.sin(wr) * v;
-
-        //sw.r = r;
-        
-        sw.visible = true;
-        sw.alive = aliveTime;
-
-        sprite_[num] = sw;
-        */
-    }
-
-    //old_version => new sprite_[].pos(x, y, r, z)
-    this.pos = function (num, x, y, r, z) {
-        let sw = sprite_[num];
-
-        sw.pos(x, y, r, z);
-        sw.view();
-        /*
-        sw.x = x; sw.y = y; sw.r = r;
-        sw.z = z;
-
-        sw.visible = true;
-
-        sprite_[num] = sw;
-        */
-    }
-
-    //old_version => new sprite_[].stop(); new sprite_[].hide(); sprite_[].collisionEnable = false;
-    this.reset = function (num ) {
-        let sw = sprite_[num];
-
-        sw.visible = false;
-        sw.collisionEnable = false;
-        sw.alive = 0;
-        sw.vx = 0;
-        sw.vy = 0;
-
-        sprite_[num] = sw;
-    }
-
+    //----
     this.manualDraw = function (bool=true) {
 
         if (bool) {
@@ -276,105 +190,13 @@ function GameSpriteControl(g) {
     this.useScreen = function( num ){
         buffer_ = g.screen[num].buffer;
     }
-    //old_version => new sprote_[].put(x, y, r, z);
-    this.put = function (num, x, y, r, z) {
-        let sw = sprite_[num];
-        sw.put(x, y, r, z);
-        /*
-        sw.x = x;
-        sw.y = y;
-        sw.r = r;
-        sw.z = z;
-
-        if (!Boolean(pattern_[sw.id])){
-            buffer_.fillText( num + " " + sw.count , x, y);
-        }else{
-            spPut(pattern_[sw.id].image, pattern_[sw.id].pattern[sw.pcnt], x, y, r, z);
-            sw.count++;
-            if (sw.count > pattern_[sw.id].wait) { sw.count = 0; sw.pcnt++; }
-            if (sw.pcnt > pattern_[sw.id].pattern.length - 1) { sw.pcnt = 0; }
-        }
-
-//        sw.count++;
-//        if (sw.count > patten_[id].pattern.length) { sw.count = 0; }
-        */
-    };
-    //old_version => .itemList or ItemCreate ->retrun objItem
-    this.get = function (num) {
-
-        if (Boolean(num)) {
-            
-            if (!Boolean(sprite_[num])) {
-                sprite_[num] = new SpItem();
-            }
-            return sprite_[num];
-
-        } else {
-            
-            let rc = -1;
-            for (let i in sprite_) {
-                if (!sprite_[i].visible) {
-                    rc = i;
-                }
-            }
-            if (rc == -1) {
-                rc = sprite_.length;
-            }
-
-            return rc;
-        }
-    }
 
     this.setPattern = function (id, Param) {
         
         pattern_[id] = { image: g.asset.image[ Param.image ].img, wait:Param.wait, pattern:Param.pattern }
         
     }
-    //old_version (1:N) colcheck return numlist
-    this.check = function (num) {
 
-        //collisionTest
-        let checktarget = [];
-
-        for (let i in sprite_) {
-            let sw = sprite_[i];
-
-            if (sw.visible) {
-                if (sw.collisionEnable) {
-                    checktarget.push(i);
-                }
-            }
-        }
-
-        let ary = [];
-
-        let my = {
-            x: sprite_[num].x,
-            y: sprite_[num].y,
-            w: sprite_[num].collision.w / 2,
-            h: sprite_[num].collision.h / 2
-        };
-
-        for (let i = 0, loopend = checktarget.length; i < loopend; i++) {
-
-            if (num != checktarget[i]) {
-                let tgt = {
-                    x: sprite_[checktarget[i]].x, y: sprite_[checktarget[i]].y,
-                    w: sprite_[checktarget[i]].collision.w / 2, h: sprite_[checktarget[i]].collision.h / 2
-                }
-
-                if ((Math.abs(my.x - tgt.x) < my.w + tgt.w)
-                    && (Math.abs(my.y - tgt.y) < my.h + tgt.h)) {
-
-                    ary.push(checktarget[i]);
-                }
-            }
-        }
-
-        //返すのはスプライト番号だけにするか、スプライトオブジェクトを返すべきか？
-        //ひとまずスプライト番号のリストを返すこととする。（扱いにくい場合は再度調整）
-        return ary;
-    }
     //FullCheck return spitem[].hit(array)<-obj
     this.CollisionCheck = function(){
         //総当たりなのでパフォーマンス不足の場合は書き換える必要有。
@@ -382,7 +204,7 @@ function GameSpriteControl(g) {
         for (let i in sprite_) {
             let sp = sprite_[i];
             if (sp.living){//visibleではない場合での当たり判定有の場合がある可能性を考えて処理
-                if (sw.collisionEnable) {
+                if (sp.collisionEnable) {
                     checklist.push(sp);
                 }
             }
@@ -392,7 +214,7 @@ function GameSpriteControl(g) {
             ssp.hit = [];
             for(let j in checklist){
                 if (!(i == j)){
-                    let dsp = checklist(j);
+                    let dsp = checklist[j];
 
                     if ((Math.abs(ssp.x - dsp.x) < ((ssp.collision.w/2) + (dsp.collision.w/2)))
                         && (Math.abs(ssp.y - dsp.y) < ((ssp.collision.h/2) + (dsp.collision.h/2)))) {
@@ -463,7 +285,6 @@ function GameSpriteControl(g) {
             }
             pbuf.sort();
             let wo = pbuf.buffer();
-            console.log("pbuf:" + wo.length);
 
             for (let i in wo) {
                 let sw = wo[i];
@@ -490,7 +311,6 @@ function GameSpriteControl(g) {
                         sw.count++;
                         if (sw.count > pattern_[sw.id].wait) { sw.count = 0; sw.pcnt++; }
                         if (sw.pcnt > pattern_[sw.id].pattern.length - 1) { sw.pcnt = 0; }
-                        console.log("ads:" + i);
                     }
                 }
             }
