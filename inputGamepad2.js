@@ -1,9 +1,9 @@
-function inputGamepad2(){
+function inputGamepad(){
 
-    var support = (window.Gamepad); //Support Gamepad API
-    var connect = (navigator.getGamepads); //GamePad Ready
+    let support = (window.Gamepad); //Support Gamepad API
+    let connect = (navigator.getGamepads); //GamePad Ready
 
-    var gamepad_list// = navigator.getGamepads();
+    let gamepad_list// = navigator.getGamepads();
 
     this.upkey;// = false;
     this.downkey;// = false;
@@ -31,7 +31,7 @@ function inputGamepad2(){
     this.rs_x; //axes[2]
     this.rs_y; //axes[3]
 
-    var readystate = false;
+    let readystate = false;
 
     this.button;
     this.axes;
@@ -42,7 +42,11 @@ function inputGamepad2(){
         if (!(support && connect)) return false;
 
         gamepad_list = navigator.getGamepads();
-        var gamepad = gamepad_list[0];
+
+        //connect Check 認識したうちで一番若い番号のコントローラを使用する
+        let ct = []; for (let i in gamepad_list) if (Boolean(gamepad_list[i])) ct.push(i);
+        let num = Math.min(...ct);
+        let gamepad = gamepad_list[num];
 
         if(!gamepad) return false;
         readystate = true;
@@ -55,15 +59,26 @@ function inputGamepad2(){
     //↓これは基本外部から使用しない↓
     //差し替えでGamepadのハード別対応させることが出来る。
     this.update = function( gamepad ){
+
         //paramater:
+        //Logicool Gamepad F310　(Mode *DirectX/X-Input) ------
         //id: "Logicool Dual Action (STANDARD GAMEPAD Vendor: 046d Product: c216)"
         //mapping: "standard"
         var p = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-
         //id: "Xbox 360 Controller (XInput STANDARD GAMEPAD)"
         //mapping: "standard"
         //var p = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-
+        //
+        //SONY CUH-ZCT2J WIRELESS CONTROLLER (PS4Pro) ------
+        //id: "Wireless Controller (STANDARD GAMEPAD Vendor: 054c Product: 09cc)"
+        //mapping: "standard"
+        //var p = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+        //
+        //SONY CFI-ZCT1J WIRELESS CONTROLLER (PS5) ------
+        //id: "DualSense Wireless Controller (STANDARD GAMEPAD Vendor: 054c Product: 0ce6)"
+        //mapping: "standard"
+        //var p = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+        
         var button	 = gamepad.buttons;
         var axes	 = gamepad.axes;
 
@@ -84,9 +99,9 @@ function inputGamepad2(){
         this.btn_l3		 = (Boolean(button[ p[10] ]))?button[ p[10] ].pressed:false;
         this.btn_r3		 = (Boolean(button[ p[11] ]))?button[ p[11] ].pressed:false;
 
-        this.btn_a	= (Boolean(button[ p[ 3] ]))?button[ p[ 0] ].pressed:false;
-        this.btn_b	= (Boolean(button[ p[ 3] ]))?button[ p[ 1] ].pressed:false;
-        this.btn_x	= (Boolean(button[ p[ 3] ]))?button[ p[ 2] ].pressed:false;
+        this.btn_a	= (Boolean(button[ p[ 0] ]))?button[ p[ 0] ].pressed:false;
+        this.btn_b	= (Boolean(button[ p[ 1] ]))?button[ p[ 1] ].pressed:false;
+        this.btn_x	= (Boolean(button[ p[ 2] ]))?button[ p[ 2] ].pressed:false;
         this.btn_y	= (Boolean(button[ p[ 3] ]))?button[ p[ 3] ].pressed:false;
 
         this.ls_x = (Boolean(axes[0]))?axes[0]:0;
@@ -111,55 +126,80 @@ function inputGamepad2(){
     }
 
     this.infodraw = function(){
-        var str = [];
-        str.push("[Gamepad]");
-         
-        // ------------------------------------------------------------
-        // Gamepad オブジェクト
-        // ------------------------------------------------------------
-        // ゲームパッドリストを取得する
-        // gamepad_list = navigator.getGamepads();
-        // ゲームパッドリスト内のアイテム総数を取得する
-        // num = gamepad_list.length;
-        // gamepad[num]
-        // ------------------------------------------------------------
-        // タイムスタンプ情報 // gamepad.timestamp
-        // ------------------------------------------------------------
-        // ゲームパッドの識別名 // gamepad.id
-        // ------------------------------------------------------------
-        // ゲームパッドの物理的な接続状態 // gamepad.connected
-        // ------------------------------------------------------------
-        // マッピングタイプ情報 // gamepad.mapping
-        // ------------------------------------------------------------
-        // ボタンリスト // gamepad.buttons[] // buttons.length;
-        // ------------------------------------------------------------
-        // 軸リスト // gamepad.axes[]; //// axes.length;
+        let str = [];
+        str.push("[Gamepad] max:" + gamepad_list.length);
 
-        str.push("Up   [" + (this.upkey ? "o":"-") + "]");
-        str.push("Down [" + (this.downkey ? "o":"-") + "]");
-        str.push("Left [" + (this.leftkey ? "o":"-") + "]");
-        str.push("Right[" + (this.rightkey ? "o":"-") + "]");
-        str.push("");
-        str.push("(A)  [" + (this.btn_a ? "o":"-") + "]");
-        str.push("(B)  [" + (this.btn_b ? "o":"-") + "]");
-        str.push("(X)  [" + (this.btn_x ? "o":"-") + "]");
-        str.push("(Y)  [" + (this.btn_y ? "o":"-") + "]");
-        str.push("");
-        str.push("START[" + (this.btn_start ? "o":"-") + "]");
-        str.push("BACK [" + (this.btn_back ? "o":"-") + "]");
-        str.push("LB   [" + (this.btn_lb ? "o":"-") + "]");
-        str.push("RB   [" + (this.btn_rb ? "o":"-") + "]");
-        str.push("LT   [" + (this.btn_lt ? "o":"-") + "]");
-        str.push("RT   [" + (this.btn_rt ? "o":"-") + "]");
-        str.push("L3   [" + (this.btn_l3 ? "o":"-") + "]");
-        str.push("R3   [" + (this.btn_r3 ? "o":"-") + "]");
-        str.push("");
-        str.push("r = " + this.r );
-        str.push("");
-        str.push("Ls_x: " + this.ls_x );
-        str.push("Ls_y: " + this.ls_y );
-        str.push("Rs_x: " + this.rs_x );
-        str.push("Rs_y: " + this.rs_y );
+        //Coneect Check
+        let ct = [];
+       for (let i in gamepad_list){
+            if (Boolean(gamepad_list[i])){
+                str.push("no:" + i + ", type:" + gamepad_list[i].mapping);     
+                str.push("id:" + gamepad_list[i].id);
+                //console.log("no:" + i + ", type:" + gamepad_list[i].mapping);     
+                //console.log("id:" + gamepad_list[i].id);
+                ct.push(i);
+            } else {
+                str.push("no." + i + " not Connect");     
+            }
+        }
+        str.push("--------------------------------");
+
+        let num = Math.min(...ct);
+
+        if(gamepad_list[num]){
+            // ------------------------------------------------------------
+            // Gamepad オブジェクト
+            // ------------------------------------------------------------
+            // ゲームパッドリストを取得する
+            // gamepad_list = navigator.getGamepads();
+            // ゲームパッドリスト内のアイテム総数を取得する
+            // num = gamepad_list.length;
+            // gamepad[num]
+            // ------------------------------------------------------------
+            // タイムスタンプ情報 // gamepad.timestamp
+            // ------------------------------------------------------------
+            // ゲームパッドの識別名 // gamepad.id
+            // ------------------------------------------------------------
+            // ゲームパッドの物理的な接続状態 // gamepad.connected
+            // ------------------------------------------------------------
+            // マッピングタイプ情報 // gamepad.mapping
+            // ------------------------------------------------------------
+            // ボタンリスト // gamepad.buttons[] // buttons.length;
+            // ------------------------------------------------------------
+            // 軸リスト // gamepad.axes[]; //// axes.length;
+
+            let gp = gamepad_list[num];
+            str.push("Use No:" + num +", type:" + gp.mapping);     
+            str.push("id:" + gp.id);
+            str.push("");
+            str.push("Up   [" + (this.upkey ? "o":"-") + "]" 
+            + " Down [" + (this.downkey ? "o":"-") + "]"
+            + " Left [" + (this.leftkey ? "o":"-") + "]"
+            + " Right[" + (this.rightkey ? "o":"-") + "]");
+            str.push("");
+            str.push("(A)  [" + (this.btn_a ? "o":"-") + "]"
+            + " (B)  [" + (this.btn_b ? "o":"-") + "]"
+            + " (X)  [" + (this.btn_x ? "o":"-") + "]"
+            + " (Y)  [" + (this.btn_y ? "o":"-") + "]");
+            str.push("");
+            str.push("BACK [" + (this.btn_back ? "o":"-") + "]"
+            + " START[" + (this.btn_start ? "o":"-") + "]");
+            str.push("LB   [" + (this.btn_lb ? "o":"-") + "]"
+            + " RB   [" + (this.btn_rb ? "o":"-") + "]");
+            str.push("LT   [" + (this.btn_lt ? "o":"-") + "]"
+            + " RT   [" + (this.btn_rt ? "o":"-") + "]");
+            str.push("L3   [" + (this.btn_l3 ? "o":"-") + "]"
+            + " R3   [" + (this.btn_r3 ? "o":"-") + "]");
+            str.push("");
+            str.push("r = " + this.r );
+            str.push("");
+            str.push("Ls_x: " + this.ls_x );
+            str.push("Ls_y: " + this.ls_y );
+            str.push("Rs_x: " + this.rs_x );
+            str.push("Rs_y: " + this.rs_y );
+        }else{
+            str.push("Not Ready.")
+        }
 
         return str;
     }

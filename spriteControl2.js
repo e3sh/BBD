@@ -35,7 +35,7 @@
     //.reset = function()
 */
 
-function GameSpriteControl2(g) {
+function GameSpriteControl(g) {
     //
     //let MAXSPRITE = 1000;
     //screen size (colision check)
@@ -67,6 +67,7 @@ function GameSpriteControl2(g) {
         }
 
         variable_reset();
+        prop_set();
 
         //inital
         this.x  = x_; this.y  = y_; this.r  = r_; this.z  = z_;
@@ -87,6 +88,7 @@ function GameSpriteControl2(g) {
             this.priority = pr_;
             this.collisionEnable = colE_; this.collision = col_;
             this.id = id_;
+            this.count = count_; this.pcnt = pcnt_;
             this.visible = v_; this.hit = hit_;
             this.alive = alive_; this.index = index_; 
             this.living = live_;
@@ -100,6 +102,7 @@ function GameSpriteControl2(g) {
         }
 
         this.move = function(dir, speed, aliveTime){
+            this.visible = true;
             let wr = ((dir - 90) * (Math.PI / 180.0));
             this.vx = Math.cos(wr)*speed;
             this.vy = Math.sin(wr)*speed; 
@@ -186,8 +189,11 @@ function GameSpriteControl2(g) {
     //  size w,h
     // 
     //return num => new .itemCreate(id, col, w, h)
-    this.set = function (num, id, col=false, w=0, h=0) {
+    this.set = function (num, id, col, w, h) {
 
+        let it = this.itemCreate(id, col, w, h);
+
+        /*
         if (!Boolean(sprite_[num])) {
             sprite_[num] = new SpItem();
         }
@@ -206,32 +212,43 @@ function GameSpriteControl2(g) {
         }
 
         sprite_[num].visible = false;
+        */
     }
     //old_version => new sprite_[].move(r, v, aliveTime)
-    this.setMove = function (num, r=0, v=1, aliveTime=60) {
+    this.setMove = function (num, r, v, aliveTime) {
         let sw = sprite_[num];
 
+        sw.move(r, v, aliveTime);
+        sw.view();
+        /*
         let wr = ((r - 90) * (Math.PI / 180.0));
 
         sw.vx = Math.cos(wr) * v;
         sw.vy = Math.sin(wr) * v;
 
-        sw.r = r;
-
+        //sw.r = r;
+        
+        sw.visible = true;
         sw.alive = aliveTime;
+
+        sprite_[num] = sw;
+        */
     }
 
     //old_version => new sprite_[].pos(x, y, r, z)
-    this.pos = function (num, x, y, r=0, z=0) {
+    this.pos = function (num, x, y, r, z) {
         let sw = sprite_[num];
 
+        sw.pos(x, y, r, z);
+        sw.view();
+        /*
         sw.x = x; sw.y = y; sw.r = r;
         sw.z = z;
 
         sw.visible = true;
 
         sprite_[num] = sw;
-
+        */
     }
 
     //old_version => new sprite_[].stop(); new sprite_[].hide(); sprite_[].collisionEnable = false;
@@ -243,6 +260,8 @@ function GameSpriteControl2(g) {
         sw.alive = 0;
         sw.vx = 0;
         sw.vy = 0;
+
+        sprite_[num] = sw;
     }
 
     this.manualDraw = function (bool=true) {
@@ -258,9 +277,10 @@ function GameSpriteControl2(g) {
         buffer_ = g.screen[num].buffer;
     }
     //old_version => new sprote_[].put(x, y, r, z);
-    this.put = function (num, x, y, r=0, z=1) {
+    this.put = function (num, x, y, r, z) {
         let sw = sprite_[num];
-
+        sw.put(x, y, r, z);
+        /*
         sw.x = x;
         sw.y = y;
         sw.r = r;
@@ -277,6 +297,7 @@ function GameSpriteControl2(g) {
 
 //        sw.count++;
 //        if (sw.count > patten_[id].pattern.length) { sw.count = 0; }
+        */
     };
     //old_version => .itemList or ItemCreate ->retrun objItem
     this.get = function (num) {
@@ -429,7 +450,7 @@ function GameSpriteControl2(g) {
     const pbuf = new priorityBuffer();
 
     this.allDrawSprite = function () {
- 
+
         if (autoDrawMode) {
             pbuf.reset();
             for (let i in sprite_) {
@@ -442,6 +463,7 @@ function GameSpriteControl2(g) {
             }
             pbuf.sort();
             let wo = pbuf.buffer();
+            console.log("pbuf:" + wo.length);
 
             for (let i in wo) {
                 let sw = wo[i];
@@ -453,10 +475,13 @@ function GameSpriteControl2(g) {
                     sw.y += sw.vy;
 
                     if (sw.alive <= 0) {
-                        sw.visible = false;//this.reset(i);
+                        sw.visible = false;
+                    }else{
+                        sw.visible = true;
                     }
                 }
- 
+
+                //buffer_.fillText(i + " " + sw.visible, sw.x, sw.y);
                 if (sw.visible) {
                     if (!Boolean(pattern_[sw.id])) {
                         buffer_.fillText(i + " " + sw.count, sw.x, sw.y);
@@ -465,6 +490,7 @@ function GameSpriteControl2(g) {
                         sw.count++;
                         if (sw.count > pattern_[sw.id].wait) { sw.count = 0; sw.pcnt++; }
                         if (sw.pcnt > pattern_[sw.id].pattern.length - 1) { sw.pcnt = 0; }
+                        console.log("ads:" + i);
                     }
                 }
             }
